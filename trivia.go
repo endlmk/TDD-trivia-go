@@ -38,14 +38,10 @@ func NewGame() *Game {
 		game.sportsQuestions = append(game.sportsQuestions,
 			fmt.Sprintf("Sports Question %d\n", i))
 		game.rockQuestions = append(game.rockQuestions,
-			game.CreateRockQuestion(i))
+			fmt.Sprintf("Rock Question %d\n", i))
 	}
 
 	return game
-}
-
-func (me *Game) CreateRockQuestion(index int) string {
-	return fmt.Sprintf("Rock Question %d\n", index)
 }
 
 func (me *Game) IsPlayable() bool {
@@ -63,7 +59,7 @@ func (me *Game) Add(playerName string) bool {
 	me.inPenaltyBox[me.howManyPlayers()] = false
 
 	fmt.Printf("%s was added\n", playerName)
-	fmt.Printf("They are player number %d\n", len(me.players))
+	fmt.Printf("They are player number %d\n", me.howManyPlayers())
 
 	return true
 }
@@ -105,22 +101,22 @@ func (me *Game) askQuestion() {
 	if me.currentCategory() == "Pop" {
 		question := me.popQuestions[0]
 		me.popQuestions = me.popQuestions[1:]
-		fmt.Printf(question)
+		fmt.Print(question)
 	}
 	if me.currentCategory() == "Science" {
 		question := me.scienceQuestions[0]
 		me.scienceQuestions = me.scienceQuestions[1:]
-		fmt.Printf(question)
+		fmt.Print(question)
 	}
 	if me.currentCategory() == "Sports" {
 		question := me.sportsQuestions[0]
 		me.sportsQuestions = me.sportsQuestions[1:]
-		fmt.Printf(question)
+		fmt.Print(question)
 	}
 	if me.currentCategory() == "Rock" {
 		question := me.rockQuestions[0]
 		me.rockQuestions = me.rockQuestions[1:]
-		fmt.Printf(question)
+		fmt.Print(question)
 	}
 }
 
@@ -156,59 +152,25 @@ func (me *Game) currentCategory() string {
 }
 
 func (me *Game) WasCorrectlyAnswered() bool {
-	if me.inPenaltyBox[me.currentPlayer] {
-		if me.isGettingOutOfPenaltyBox {
-			fmt.Println("Answer was correct!!!!")
-			me.purses[me.currentPlayer] += 1
-			fmt.Printf("%s now has %d Gold Coins.\n", me.players[me.currentPlayer], me.purses[me.currentPlayer])
-
-			winner := me.didPlayerWin()
-			me.currentPlayer += 1
-			if me.currentPlayer == len(me.players) {
-				me.currentPlayer = 0
-			}
-
-			return winner
-		} else {
-			me.currentPlayer += 1
-			if me.currentPlayer == len(me.players) {
-				me.currentPlayer = 0
-			}
-			return true
-		}
-	} else {
-
-		fmt.Println("Answer was corrent!!!!")
+	if !me.inPenaltyBox[me.currentPlayer] || me.isGettingOutOfPenaltyBox {
+		fmt.Println("Answer was correct!!!!")
 		me.purses[me.currentPlayer] += 1
 		fmt.Printf("%s now has %d Gold Coins.\n", me.players[me.currentPlayer], me.purses[me.currentPlayer])
 
-		winner := me.didPlayerWin()
-		me.currentPlayer += 1
-		if me.currentPlayer == len(me.players) {
-			me.currentPlayer = 0
-		}
-
-		return winner
+		return me.didPlayerWin()
+	} else {
+		return false
 	}
-
-	return false
 }
 
 func (me *Game) didPlayerWin() bool {
-	return !(me.purses[me.currentPlayer] == 6)
+	return me.purses[me.currentPlayer] == 6
 }
 
-func (me *Game) WrongAnswer() bool {
+func (me *Game) WrongAnswer() {
 	fmt.Println("Question was incorrectly answered")
 	fmt.Printf("%s was sent to the penalty box\n", me.players[me.currentPlayer])
 	me.inPenaltyBox[me.currentPlayer] = true
-
-	me.currentPlayer += 1
-	if me.currentPlayer == len(me.players) {
-		me.currentPlayer = 0
-	}
-
-	return true
 }
 
 func main() {
@@ -218,8 +180,6 @@ func main() {
 }
 
 func gameLoop(seed int64) {
-	notAWinner := false
-
 	game := NewGame()
 
 	game.Add("Chet")
@@ -232,14 +192,13 @@ func gameLoop(seed int64) {
 		game.Roll(rand.Intn(5) + 1)
 
 		if rand.Intn(9) == 7 {
-			notAWinner = game.WrongAnswer()
+			game.WrongAnswer()
 		} else {
-			notAWinner = game.WasCorrectlyAnswered()
-
+			isWon := game.WasCorrectlyAnswered()
+			if isWon {
+				break
+			}
 		}
-
-		if !notAWinner {
-			break
-		}
+		game.currentPlayer = (game.currentPlayer + 1) % game.howManyPlayers()
 	}
 }
