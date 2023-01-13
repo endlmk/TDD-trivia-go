@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 )
 
@@ -211,6 +212,12 @@ func (me *Game) WrongAnswer() bool {
 }
 
 func main() {
+	seed := time.Now().UTC().UnixNano()
+	fmt.Printf("%v\n", strconv.FormatInt(seed, 10))
+	gameLoop(seed)
+}
+
+func gameLoop(seed int64) {
 	notAWinner := false
 
 	game := NewGame()
@@ -219,7 +226,7 @@ func main() {
 	game.Add("Pat")
 	game.Add("Sue")
 
-	rand.Seed(time.Now().UTC().UnixNano())
+	rand.Seed(seed)
 
 	for {
 		game.Roll(rand.Intn(5) + 1)
