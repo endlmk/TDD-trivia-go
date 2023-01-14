@@ -7,28 +7,27 @@ import (
 	"time"
 )
 
+type Player struct {
+	name         string
+	place        int
+	purse        int
+	inPenaltyBox bool
+}
+
 type Game struct {
-	players      []string
-	places       []int
-	purses       []int
-	inPenaltyBox []bool
+	players            []Player
+	currentPlayerIndex int
 
 	popQuestions     []string
 	scienceQuestions []string
 	sportsQuestions  []string
 	rockQuestions    []string
 
-	currentPlayer            int
 	isGettingOutOfPenaltyBox bool
 }
 
 func NewGame() *Game {
 	game := &Game{}
-	for i := 0; i < 6; i++ {
-		game.places = append(game.places, 0)
-		game.purses = append(game.purses, 0)
-		game.inPenaltyBox = append(game.inPenaltyBox, false)
-	}
 
 	for i := 0; i < 50; i++ {
 		game.popQuestions = append(game.popQuestions,
@@ -53,10 +52,7 @@ func (me *Game) howManyPlayers() int {
 }
 
 func (me *Game) Add(playerName string) bool {
-	me.players = append(me.players, playerName)
-	me.places[me.howManyPlayers()] = 0
-	me.purses[me.howManyPlayers()] = 0
-	me.inPenaltyBox[me.howManyPlayers()] = false
+	me.players = append(me.players, Player{name: playerName})
 
 	fmt.Printf("%s was added\n", playerName)
 	fmt.Printf("They are player number %d\n", me.howManyPlayers())
@@ -65,21 +61,21 @@ func (me *Game) Add(playerName string) bool {
 }
 
 func (me *Game) Roll(roll int) {
-	fmt.Printf("%s is the current player\n", me.players[me.currentPlayer])
+	fmt.Printf("%s is the current player\n", me.getCurrentPlayer().name)
 	fmt.Printf("They have rolled a %d\n", roll)
 
-	if me.inPenaltyBox[me.currentPlayer] {
+	if me.getCurrentPlayer().inPenaltyBox {
 		if roll%2 != 0 {
 			me.isGettingOutOfPenaltyBox = true
-			fmt.Printf("%s is getting out of the penalty box\n", me.players[me.currentPlayer])
+			fmt.Printf("%s is getting out of the penalty box\n", me.getCurrentPlayer().name)
 		} else {
 			me.isGettingOutOfPenaltyBox = false
-			fmt.Printf("%s is not getting out of the penalty box\n", me.players[me.currentPlayer])
+			fmt.Printf("%s is not getting out of the penalty box\n", me.getCurrentPlayer().name)
 			return
 		}
 	}
-	me.places[me.currentPlayer] = (me.places[me.currentPlayer] + roll) % 12
-	fmt.Printf("%s's new location is %d\n", me.players[me.currentPlayer], me.places[me.currentPlayer])
+	me.getCurrentPlayer().place = (me.getCurrentPlayer().place + roll) % 12
+	fmt.Printf("%s's new location is %d\n", me.getCurrentPlayer().name, me.getCurrentPlayer().place)
 	fmt.Printf("The category is %s\n", me.currentCategory())
 	me.askQuestion()
 }
@@ -104,7 +100,7 @@ func (me *Game) askQuestion() {
 }
 
 func (me *Game) currentCategory() string {
-	switch me.places[me.currentPlayer] {
+	switch me.getCurrentPlayer().place {
 	case 0, 4, 8:
 		return "Pop"
 	case 1, 5, 9:
@@ -117,10 +113,10 @@ func (me *Game) currentCategory() string {
 }
 
 func (me *Game) WasCorrectlyAnswered() bool {
-	if !me.inPenaltyBox[me.currentPlayer] || me.isGettingOutOfPenaltyBox {
+	if !me.getCurrentPlayer().inPenaltyBox || me.isGettingOutOfPenaltyBox {
 		fmt.Println("Answer was correct!!!!")
-		me.purses[me.currentPlayer] += 1
-		fmt.Printf("%s now has %d Gold Coins.\n", me.players[me.currentPlayer], me.purses[me.currentPlayer])
+		me.getCurrentPlayer().purse += 1
+		fmt.Printf("%s now has %d Gold Coins.\n", me.getCurrentPlayer().name, me.getCurrentPlayer().purse)
 
 		return me.didPlayerWin()
 	} else {
@@ -129,13 +125,21 @@ func (me *Game) WasCorrectlyAnswered() bool {
 }
 
 func (me *Game) didPlayerWin() bool {
-	return me.purses[me.currentPlayer] == 6
+	return me.getCurrentPlayer().purse == 6
 }
 
 func (me *Game) WrongAnswer() {
 	fmt.Println("Question was incorrectly answered")
-	fmt.Printf("%s was sent to the penalty box\n", me.players[me.currentPlayer])
-	me.inPenaltyBox[me.currentPlayer] = true
+	fmt.Printf("%s was sent to the penalty box\n", me.getCurrentPlayer().name)
+	me.getCurrentPlayer().inPenaltyBox = true
+}
+
+func (me *Game) nextTurn() {
+	me.currentPlayerIndex = (me.currentPlayerIndex + 1) % me.howManyPlayers()
+}
+
+func (me *Game) getCurrentPlayer() *Player {
+	return &me.players[me.currentPlayerIndex]
 }
 
 func main() {
@@ -164,6 +168,6 @@ func gameLoop(seed int64) {
 				break
 			}
 		}
-		game.currentPlayer = (game.currentPlayer + 1) % game.howManyPlayers()
+		game.nextTurn()
 	}
 }

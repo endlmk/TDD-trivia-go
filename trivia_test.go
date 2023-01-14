@@ -55,9 +55,44 @@ func captureStdout(t *testing.T, fun func()) string {
 }
 
 func readTestdata(t *testing.T, path string) string {
+	t.Helper()
+
 	b, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read testdata: %v", err)
 	}
 	return string(b)
+}
+
+func TestCurrentUser(t *testing.T) {
+	game := NewGame()
+	game.Add("p1")
+	game.Add("p2")
+	game.Add("p3")
+
+	p := game.getCurrentPlayer()
+	if p.name != "p1" {
+		t.Fatalf("Wrong player")
+	}
+
+	game.nextTurn()
+
+	p = game.getCurrentPlayer()
+	if p.name != "p2" {
+		t.Fatalf("Wrong player")
+	}
+
+	game.nextTurn()
+
+	p = game.getCurrentPlayer()
+	if p.name != "p3" {
+		t.Fatalf("Wrong player")
+	}
+
+	game.nextTurn()
+
+	p = game.getCurrentPlayer()
+	if p.name != "p1" {
+		t.Fatalf("Wrong player")
+	}
 }
