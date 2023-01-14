@@ -71,84 +71,49 @@ func (me *Game) Roll(roll int) {
 	if me.inPenaltyBox[me.currentPlayer] {
 		if roll%2 != 0 {
 			me.isGettingOutOfPenaltyBox = true
-
 			fmt.Printf("%s is getting out of the penalty box\n", me.players[me.currentPlayer])
-			me.places[me.currentPlayer] = me.places[me.currentPlayer] + roll
-			if me.places[me.currentPlayer] > 11 {
-				me.places[me.currentPlayer] = me.places[me.currentPlayer] - 12
-			}
-
-			fmt.Printf("%s's new location is %d\n", me.players[me.currentPlayer], me.places[me.currentPlayer])
-			fmt.Printf("The category is %s\n", me.currentCategory())
-			me.askQuestion()
 		} else {
-			fmt.Printf("%s is not getting out of the penalty box\n", me.players[me.currentPlayer])
 			me.isGettingOutOfPenaltyBox = false
+			fmt.Printf("%s is not getting out of the penalty box\n", me.players[me.currentPlayer])
+			return
 		}
-	} else {
-		me.places[me.currentPlayer] = me.places[me.currentPlayer] + roll
-		if me.places[me.currentPlayer] > 11 {
-			me.places[me.currentPlayer] = me.places[me.currentPlayer] - 12
-		}
-
-		fmt.Printf("%s's new location is %d\n", me.players[me.currentPlayer], me.places[me.currentPlayer])
-		fmt.Printf("The category is %s\n", me.currentCategory())
-		me.askQuestion()
 	}
+	me.places[me.currentPlayer] = (me.places[me.currentPlayer] + roll) % 12
+	fmt.Printf("%s's new location is %d\n", me.players[me.currentPlayer], me.places[me.currentPlayer])
+	fmt.Printf("The category is %s\n", me.currentCategory())
+	me.askQuestion()
 }
 
 func (me *Game) askQuestion() {
-	if me.currentCategory() == "Pop" {
-		question := me.popQuestions[0]
-		me.popQuestions = me.popQuestions[1:]
-		fmt.Print(question)
+	var questions *[]string
+	switch me.currentCategory() {
+	case "Pop":
+		questions = &me.popQuestions
+	case "Science":
+		questions = &me.scienceQuestions
+	case "Sports":
+		questions = &me.sportsQuestions
+	case "Rock":
+		questions = &me.rockQuestions
+	default:
+		return
 	}
-	if me.currentCategory() == "Science" {
-		question := me.scienceQuestions[0]
-		me.scienceQuestions = me.scienceQuestions[1:]
-		fmt.Print(question)
-	}
-	if me.currentCategory() == "Sports" {
-		question := me.sportsQuestions[0]
-		me.sportsQuestions = me.sportsQuestions[1:]
-		fmt.Print(question)
-	}
-	if me.currentCategory() == "Rock" {
-		question := me.rockQuestions[0]
-		me.rockQuestions = me.rockQuestions[1:]
-		fmt.Print(question)
-	}
+	question := (*questions)[0]
+	*questions = (*questions)[1:]
+	fmt.Print(question)
 }
 
 func (me *Game) currentCategory() string {
-	if me.places[me.currentPlayer] == 0 {
+	switch me.places[me.currentPlayer] {
+	case 0, 4, 8:
 		return "Pop"
-	}
-	if me.places[me.currentPlayer] == 4 {
-		return "Pop"
-	}
-	if me.places[me.currentPlayer] == 8 {
-		return "Pop"
-	}
-	if me.places[me.currentPlayer] == 1 {
+	case 1, 5, 9:
 		return "Science"
-	}
-	if me.places[me.currentPlayer] == 5 {
-		return "Science"
-	}
-	if me.places[me.currentPlayer] == 9 {
-		return "Science"
-	}
-	if me.places[me.currentPlayer] == 2 {
+	case 2, 6, 10:
 		return "Sports"
+	default:
+		return "Rock"
 	}
-	if me.places[me.currentPlayer] == 6 {
-		return "Sports"
-	}
-	if me.places[me.currentPlayer] == 10 {
-		return "Sports"
-	}
-	return "Rock"
 }
 
 func (me *Game) WasCorrectlyAnswered() bool {
