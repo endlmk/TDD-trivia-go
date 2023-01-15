@@ -7,16 +7,16 @@ import (
 	"time"
 )
 
-type QuizCategory int
+type QuestionCategory int
 
 const (
-	Pop QuizCategory = iota
+	Pop QuestionCategory = iota
 	Science
 	Sports
 	Rock
 )
 
-func (q QuizCategory) String() string {
+func (q QuestionCategory) String() string {
 	switch q {
 	case Pop:
 		return "Pop"
@@ -38,14 +38,13 @@ type Player struct {
 	inPenaltyBox bool
 }
 
+type QuestionDeck []string
+
 type Game struct {
 	players            []Player
 	currentPlayerIndex int
 
-	popQuestions     []string
-	scienceQuestions []string
-	sportsQuestions  []string
-	rockQuestions    []string
+	questionDecks map[QuestionCategory]QuestionDeck
 
 	isGettingOutOfPenaltyBox bool
 }
@@ -53,15 +52,12 @@ type Game struct {
 func NewGame() *Game {
 	game := &Game{}
 
-	for i := 0; i < 50; i++ {
-		game.popQuestions = append(game.popQuestions,
-			fmt.Sprintf("Pop Question %d\n", i))
-		game.scienceQuestions = append(game.scienceQuestions,
-			fmt.Sprintf("Science Question %d\n", i))
-		game.sportsQuestions = append(game.sportsQuestions,
-			fmt.Sprintf("Sports Question %d\n", i))
-		game.rockQuestions = append(game.rockQuestions,
-			fmt.Sprintf("Rock Question %d\n", i))
+	game.questionDecks = map[QuestionCategory]QuestionDeck{Pop: {}, Science: {}, Sports: {}, Rock: {}}
+	for key, value := range game.questionDecks {
+		for i := 0; i < 50; i++ {
+			value = append(value, fmt.Sprintf("%v Question %d\n", key, i))
+		}
+		game.questionDecks[key] = value
 	}
 
 	return game
@@ -99,33 +95,21 @@ func (me *Game) Roll(roll int) {
 		}
 	}
 	me.getCurrentPlayer().place = (me.getCurrentPlayer().place + roll) % 12
-	quizCategory := getPlaceQuizCategory(me.getCurrentPlayer().place)
+	questionCategory := getPlaceQuestionCategory(me.getCurrentPlayer().place)
 
 	fmt.Printf("%s's new location is %d\n", me.getCurrentPlayer().name, me.getCurrentPlayer().place)
-	fmt.Printf("The category is %s\n", quizCategory)
-	me.askQuestion(quizCategory)
+	fmt.Printf("The category is %s\n", questionCategory)
+	me.askQuestion(questionCategory)
 }
 
-func (me *Game) askQuestion(quizCategory QuizCategory) {
-	var questions *[]string
-	switch quizCategory {
-	case Pop:
-		questions = &me.popQuestions
-	case Science:
-		questions = &me.scienceQuestions
-	case Sports:
-		questions = &me.sportsQuestions
-	case Rock:
-		questions = &me.rockQuestions
-	default:
-		return
-	}
-	question := (*questions)[0]
-	*questions = (*questions)[1:]
+func (me *Game) askQuestion(questionCategory QuestionCategory) {
+	questions := me.questionDecks[questionCategory]
+	question := questions[0]
+	me.questionDecks[questionCategory] = questions[1:]
 	fmt.Print(question)
 }
 
-func getPlaceQuizCategory(place int) QuizCategory {
+func getPlaceQuestionCategory(place int) QuestionCategory {
 	switch place {
 	case 0, 4, 8:
 		return Pop
