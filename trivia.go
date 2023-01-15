@@ -81,25 +81,31 @@ func (me *Game) Add(playerName string) bool {
 }
 
 func (me *Game) Roll(roll int) {
-	fmt.Printf("%s is the current player\n", me.getCurrentPlayer().name)
+	p := me.getCurrentPlayer()
+	fmt.Printf("%s is the current player\n", p.name)
 	fmt.Printf("They have rolled a %d\n", roll)
 
-	if me.getCurrentPlayer().inPenaltyBox {
+	// isGettingOutOfPenaltyBox is shared for all players. This may be a bug?
+	if p.inPenaltyBox {
 		if roll%2 != 0 {
 			me.isGettingOutOfPenaltyBox = true
-			fmt.Printf("%s is getting out of the penalty box\n", me.getCurrentPlayer().name)
+			fmt.Printf("%s is getting out of the penalty box\n", p.name)
 		} else {
 			me.isGettingOutOfPenaltyBox = false
-			fmt.Printf("%s is not getting out of the penalty box\n", me.getCurrentPlayer().name)
+			fmt.Printf("%s is not getting out of the penalty box\n", p.name)
 			return
 		}
 	}
-	me.getCurrentPlayer().place = (me.getCurrentPlayer().place + roll) % 12
-	questionCategory := getPlaceQuestionCategory(me.getCurrentPlayer().place)
+	p.gotoNextPlace(roll)
+	questionCategory := getPlaceQuestionCategory(p.place)
 
-	fmt.Printf("%s's new location is %d\n", me.getCurrentPlayer().name, me.getCurrentPlayer().place)
+	fmt.Printf("%s's new location is %d\n", p.name, p.place)
 	fmt.Printf("The category is %s\n", questionCategory)
 	me.askQuestion(questionCategory)
+}
+
+func (p *Player) gotoNextPlace(roll int) {
+	p.place = (p.place + roll) % 12
 }
 
 func (me *Game) askQuestion(questionCategory QuestionCategory) {
@@ -123,25 +129,27 @@ func getPlaceQuestionCategory(place int) QuestionCategory {
 }
 
 func (me *Game) WasCorrectlyAnswered() bool {
-	if !me.getCurrentPlayer().inPenaltyBox || me.isGettingOutOfPenaltyBox {
+	p := me.getCurrentPlayer()
+	if !p.inPenaltyBox || me.isGettingOutOfPenaltyBox {
 		fmt.Println("Answer was correct!!!!")
-		me.getCurrentPlayer().purse += 1
-		fmt.Printf("%s now has %d Gold Coins.\n", me.getCurrentPlayer().name, me.getCurrentPlayer().purse)
+		p.purse += 1
+		fmt.Printf("%s now has %d Gold Coins.\n", p.name, p.purse)
 
-		return me.didPlayerWin()
+		return p.didPlayerWin()
 	} else {
 		return false
 	}
 }
 
-func (me *Game) didPlayerWin() bool {
-	return me.getCurrentPlayer().purse == 6
+func (p *Player) didPlayerWin() bool {
+	return p.purse == 6
 }
 
 func (me *Game) WrongAnswer() {
+	p := me.getCurrentPlayer()
 	fmt.Println("Question was incorrectly answered")
-	fmt.Printf("%s was sent to the penalty box\n", me.getCurrentPlayer().name)
-	me.getCurrentPlayer().inPenaltyBox = true
+	fmt.Printf("%s was sent to the penalty box\n", p.name)
+	p.inPenaltyBox = true
 }
 
 func (me *Game) nextTurn() {
@@ -170,6 +178,7 @@ func gameLoop(seed int64) {
 	for {
 		game.Roll(rand.Intn(5) + 1)
 
+		// Even if isGettingOutOfPenaltyBox is false, answer process is executed. This must be a bug.
 		if rand.Intn(9) == 7 {
 			game.WrongAnswer()
 		} else {
