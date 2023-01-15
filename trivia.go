@@ -7,6 +7,30 @@ import (
 	"time"
 )
 
+type QuizCategory int
+
+const (
+	Pop QuizCategory = iota
+	Science
+	Sports
+	Rock
+)
+
+func (q QuizCategory) String() string {
+	switch q {
+	case Pop:
+		return "Pop"
+	case Science:
+		return "Science"
+	case Sports:
+		return "Sports"
+	case Rock:
+		return "Rock"
+	default:
+		return "unknown value"
+	}
+}
+
 type Player struct {
 	name         string
 	place        int
@@ -75,21 +99,23 @@ func (me *Game) Roll(roll int) {
 		}
 	}
 	me.getCurrentPlayer().place = (me.getCurrentPlayer().place + roll) % 12
+	quizCategory := getPlaceQuizCategory(me.getCurrentPlayer().place)
+
 	fmt.Printf("%s's new location is %d\n", me.getCurrentPlayer().name, me.getCurrentPlayer().place)
-	fmt.Printf("The category is %s\n", me.currentCategory())
-	me.askQuestion()
+	fmt.Printf("The category is %s\n", quizCategory)
+	me.askQuestion(quizCategory)
 }
 
-func (me *Game) askQuestion() {
+func (me *Game) askQuestion(quizCategory QuizCategory) {
 	var questions *[]string
-	switch me.currentCategory() {
-	case "Pop":
+	switch quizCategory {
+	case Pop:
 		questions = &me.popQuestions
-	case "Science":
+	case Science:
 		questions = &me.scienceQuestions
-	case "Sports":
+	case Sports:
 		questions = &me.sportsQuestions
-	case "Rock":
+	case Rock:
 		questions = &me.rockQuestions
 	default:
 		return
@@ -99,16 +125,16 @@ func (me *Game) askQuestion() {
 	fmt.Print(question)
 }
 
-func (me *Game) currentCategory() string {
-	switch me.getCurrentPlayer().place {
+func getPlaceQuizCategory(place int) QuizCategory {
+	switch place {
 	case 0, 4, 8:
-		return "Pop"
+		return Pop
 	case 1, 5, 9:
-		return "Science"
+		return Science
 	case 2, 6, 10:
-		return "Sports"
+		return Sports
 	default:
-		return "Rock"
+		return Rock
 	}
 }
 
